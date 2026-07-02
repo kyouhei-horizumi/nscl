@@ -664,7 +664,7 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
 
       const EVENT = {};
       for (const id of ["START", "END"]) {
-        EVENT[id] = browser.extension.getURL(`NSCL::onSyncMessageEvent.${id}`);
+        EVENT[id] = browser.runtime.getURL(`NSCL::onSyncMessageEvent.${id}`);
       }
       addEventListener(
         EVENT.START,
@@ -691,24 +691,28 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
         true,
       );
 
-      const { MutationObserver } = window.wrappedJSObject;
-      const wrappedMutationObserver = function (callback) {
-        // Use exportFunction to ensure the page can invoke your callback safely
-        const safeCallback = exportFunction((mutations, observer) => {
-          if (isProcessingSync) {
-            observerQueue.push(() => callback(mutations, observer));
-          } else {
-            callback(mutations, observer);
-          }
-        }, window);
+      const unwrappedWindow = window.wrappedJSObject;
+      const { MutationObserver } = unwrappedWindow;
+      const wrappedMutationObserver = new unwrappedWindow.Proxy(MutationObserver, cloneInto({
+        construct(target, args) {
+          const callback = (args.wrappedJSObject || args)[0];
+          // Use exportFunction to ensure the page can invoke your callback safely
+          const safeCallback = exportFunction((mutations, observer) => {
+             const task = () => callback(cloneInto(mutations, window, { wrapReflectors: true }), observer);
+            if (isProcessingSync) {
+              observerQueue.push(task);
+            } else {
+              task();
+            }
+          }, window);
+          args[0] = safeCallback;
+          // Return an instance of the native MutationObserver from the page's window
+          return Reflect.construct(target, args.wrappedJSObject || args);
+        }
+      }, window, { cloneFunctions: true, wrapReflectors: true })
+      );
 
-        // Return an instance of the native MutationObserver from the page's window
-        return new MutationObserver(safeCallback);
-      };
-
-      exportFunction(wrappedMutationObserver, window, {
-        defineAs: "MutationObserver",
-      });
+      unwrappedWindow.MutationObserver = wrappedMutationObserver;
 
       if (parent !== window && document.URL == "about:blank") {
         const { sendSyncMessage } = browser.runtime;
