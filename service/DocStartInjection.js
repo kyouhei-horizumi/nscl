@@ -81,7 +81,7 @@ var DocStartInjection = (() => {
               if (typeof cb == "function") {
                 cb.call(globalThis, data);
               } else {
-                console.warn(\`callback globalThis.${script.callback} is not a function.\`);
+                console.debug(\`callback globalThis.${script.callback} is not a function.\`, ns); // DEV_ONLY
               }
             }
          `;
@@ -124,7 +124,7 @@ var DocStartInjection = (() => {
               if (typeof cb == "function") {
                 cb.call(globalThis, data);
               } else {
-                console.warn(`callback globalThis.${callback} is not a function (${cb}).`);
+                console.debug(`callback globalThis.${callback} is not a function (${cb}).`); // DEV_ONLY
               }
             }
           } catch (e) {
