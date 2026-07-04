@@ -695,7 +695,8 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
       const { MutationObserver } = unwrappedWindow;
       const wrappedMutationObserver = new unwrappedWindow.Proxy(MutationObserver, cloneInto({
         construct(target, args) {
-          const callback = args.length && XPCNativeWrapper.unwrap(args)[0];
+          const unwrappedArgs = XPCNativeWrapper.unwrap(args);
+          const callback = unwrappedArgs[0];
           if (typeof callback == "function") {
             // Use exportFunction to ensure the page can invoke your callback safely
             const safeCallback = exportFunction((mutations, observer) => {
@@ -706,13 +707,12 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
                 task();
               }
             }, window);
-            args[0] = safeCallback;
+            unwrappedArgs[0] = safeCallback;
           }
           // Return an instance of the native MutationObserver from the page's window
-          return Reflect.construct(XPCNativeWrapper.unwrap(target), XPCNativeWrapper.unwrap(args));
+          return Reflect.construct(XPCNativeWrapper.unwrap(target), unwrappedArgs);
         }
-      }, window, { cloneFunctions: true, wrapReflectors: true })
-      );
+      }, window, { cloneFunctions: true, wrapReflectors: true }));
 
       unwrappedWindow.MutationObserver = wrappedMutationObserver;
 
