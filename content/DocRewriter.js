@@ -21,7 +21,7 @@
 "use strict";
 
 var DocRewriter = (() => {
-  const doc = document.wrappedJSObject || document;
+  const doc = globalThis.XPCNativeWrapper?.unwrap(document) || document;
   const pristine = {};
   for (const key of ["open", "write", "close"]) {
     const pristineMethod = doc[key];

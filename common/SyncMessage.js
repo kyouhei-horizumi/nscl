@@ -657,7 +657,7 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
       return result.payload;
     };
 
-    if (window.wrappedJSObject) {
+    if (globalThis.XPCNativeWrapper) {
       // Patch MutationObserver to avoid re-entrancy issues when performing XHR on Firefox
       let isProcessingSync = false;
       const observerQueue = [];
@@ -695,7 +695,7 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
       const { MutationObserver } = unwrappedWindow;
       const wrappedMutationObserver = new unwrappedWindow.Proxy(MutationObserver, cloneInto({
         construct(target, args) {
-          const callback = (args.wrappedJSObject || args)[0];
+          const callback = XPCNativeWrapper.unwrap(args)[0];
           // Use exportFunction to ensure the page can invoke your callback safely
           const safeCallback = exportFunction((mutations, observer) => {
              const task = () => callback(cloneInto(mutations, window, { wrapReflectors: true }), observer);
@@ -707,7 +707,7 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
           }, window);
           args[0] = safeCallback;
           // Return an instance of the native MutationObserver from the page's window
-          return Reflect.construct(target.wrappedJSObject || target, args.wrappedJSObject || args);
+          return Reflect.construct(XPCNativeWrapper.unwrap(target), XPCNativeWrapper.unwrap(args));
         }
       }, window, { cloneFunctions: true, wrapReflectors: true })
       );

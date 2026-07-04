@@ -271,7 +271,7 @@
     const constructWorker = (target, args) => {
       args[0] = trustedTypeSupport.createScriptURL(args[0], args._originalURL);
       delete args._originalURL;
-      return fnConstruct(target, args.wrappedJSObject || args);
+      return fnConstruct(target, xray?.unwrap(args) || args);
     }
     const apply = Reflect.apply.bind(Reflect);
 
@@ -393,7 +393,7 @@
         return createPatched(target, args);
       }
       url = url.href;
-      patchRemoteWorkerScript(url, (target.wrappedJSObject || target) === w.SharedWorker);
+      patchRemoteWorkerScript(url, xray.unwrap(target) === w.SharedWorker);
       const isWorklet = createPatched != constructWorker;
       console.debug(`Patching remote ${isWorklet ? "worklet" : "worker"}`, url); // DEV_ONLY
       const worker = createPatched(target, args);
