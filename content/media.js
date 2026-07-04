@@ -80,18 +80,10 @@ if ("MediaSource" in window) {
   if (window.wrappedJSObject) {
     const { patchWindow } = Worlds.main;
     // Fallback: Mozilla does not seem to trigger CSP media-src http: for blob: URIs assigned in MSE
-    window.wrappedJSObject.document
-      .createElementNS("http://www.w3.org/1999/xhtml", "video")
+    document.createElementNS("http://www.w3.org/1999/xhtml", "video")
       .src = "data:"; // triggers early mediaBlocker initialization via CSP
 
-    ns.on("capabilities", e => {
-      mediaBlocker = !ns.allows("media");
-      if (mediaBlocker) {
-        debug("mediaBlocker set via fetched policy.");
-        mozPatch(!ns.canScript);
-      }
-    });
-    let mozMsePatch = () => patchWindow((win, {xray})=> {
+    let mozMsePatch = () => patchWindow((win, { xray }) => {
       debug("Patching MSE for Gecko"); // DEV_ONLY
       const unpatched = new Map();
       function patch(obj, methodName, replacement) {
@@ -211,6 +203,14 @@ if ("MediaSource" in window) {
         attributeFilter: ["src"],
       });
     };
+
+    ns.on("capabilities", e => {
+      mediaBlocker = !ns.allows("media");
+      if (mediaBlocker) {
+        debug("mediaBlocker set via fetched policy.");
+        mozPatch(!ns.canScript);
+      }
+    });
   } else {
     mozPatch = () => {};
   }
