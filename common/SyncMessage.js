@@ -707,7 +707,7 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
           }, window);
           args[0] = safeCallback;
           // Return an instance of the native MutationObserver from the page's window
-          return Reflect.construct(target, args.wrappedJSObject || args);
+          return Reflect.construct(target.wrappedJSObject || target, args.wrappedJSObject || args);
         }
       }, window, { cloneFunctions: true, wrapReflectors: true })
       );
