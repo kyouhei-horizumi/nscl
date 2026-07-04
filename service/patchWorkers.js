@@ -120,8 +120,9 @@
         return;
       }
 
-      const { tabId, frameId, url, documentUrl, originUrl, requestId  } = request;
+      const { tabId, frameId, url, originUrl, requestId } = request;
       const byOrigin = patchesByTab.get(tabId);
+      let { documentUrl } = request;
       if (tabId == -1) {
         documentUrl = new URL(documentUrl).origin;
       }
