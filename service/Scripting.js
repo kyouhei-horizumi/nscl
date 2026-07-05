@@ -24,23 +24,23 @@ globalThis.Scripting ||= (() => {
 
   function fixDefaults(details, css = false) {
     if (css) {
-      if (!"origin" in details) {
+      if (!("origin" in details)) {
         details.origin = "USER";
       }
     } else {
-      if (!"injectImmediately" in details) {
+      if (!("injectImmediately" in details)) {
         details.injectImmediately = true;
       }
       if (details.func?.toString().startsWith("func()")) {
         throw new SyntaxError("Using { func() {} } rather than { func: () => {} } would cause a serialization error!");
       }
     }
-    const {target} = details;
+    const { target } = details;
     if ("frameId" in target) {
       target.frameIds = [target.frameId];
       delete target.frameId;
-    } else if (!"allFrames" in target && !target.frameIds) {
-      details.target.allFrames = true;
+    } else if (!("allFrames" in target || target.frameIds)) {
+      target.allFrames = true;
     }
     return details;
   }
