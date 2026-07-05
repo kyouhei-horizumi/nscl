@@ -331,7 +331,10 @@ function patchWindow(patchingCallback, env = {}) {
       }
       for (let j = 0; j in window; j++) {
         try {
-          modifyWindow(window[j]);
+          const w = window[j];
+          if (w) {
+            modifyWindow(w);
+          }
         } catch (e) {
           console.error(e, `Patching frames[${j}]`);
         }
