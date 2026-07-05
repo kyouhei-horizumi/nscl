@@ -31,7 +31,7 @@ var DocStartInjection = (() => {
 
   const scriptBuilders = new Set();
   const getId = ({requestId, tabId, frameId, url}) => requestId || `${tabId}:${frameId}:${url}`;
-  const pending = new Map()
+  const pending = new Map();
 
   async function begin(request) {
     let scripts = new Set();
