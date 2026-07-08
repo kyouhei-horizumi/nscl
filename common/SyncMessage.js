@@ -700,7 +700,8 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
           if (typeof callback == "function") {
             // Use exportFunction to ensure the page can invoke your callback safely
             const safeCallback = exportFunction((mutations, observer) => {
-              const task = () => callback.call(observer, cloneInto(mutations, window, { wrapReflectors: true }), observer);
+              const task = () => callback.call(observer,
+                cloneInto(mutations, window, { wrapReflectors: true }), observer);
               if (isProcessingSync) {
                 observerQueue.push(task);
               } else {
@@ -714,7 +715,8 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
         }
       }, window, { cloneFunctions: true, wrapReflectors: true }));
 
-      unwrappedWindow.MutationObserver = wrappedMutationObserver;
+      unwrappedWindow.MutationObserver =
+        MutationObserver.prototype.constructor = wrappedMutationObserver;
 
       if (parent !== window && document.URL == "about:blank") {
         const { sendSyncMessage } = browser.runtime;
