@@ -700,7 +700,7 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
           if (typeof callback == "function") {
             // Use exportFunction to ensure the page can invoke your callback safely
             const safeCallback = exportFunction((mutations, observer) => {
-              const task = () => callback(cloneInto(mutations, window, { wrapReflectors: true }), observer);
+              const task = () => callback.call(observer, cloneInto(mutations, window, { wrapReflectors: true }), observer);
               if (isProcessingSync) {
                 observerQueue.push(task);
               } else {
