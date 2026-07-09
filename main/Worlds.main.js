@@ -128,10 +128,15 @@ if (globalThis.Worlds?.main) {
           const Proxy = window.Proxy;
           env.xray = Object.assign({ window }, xray);
           env.xray.proxify =
-            (propName, handler, scope = window) =>
-              xray.unwrap(scope)[propName] =
-                new Proxy(xray.unwrap(scope[propName]), xray.forPage(handler));
-
+            (propName, handler, scope = window) => {
+              const unwrapped = xray.unwrap(scope[propName]);
+              const proxied = new Proxy(unwrapped, xray.forPage(handler));
+              xray.unwrap(scope)[propName] = proxied;
+              if (typeof unwrapped == "function" && unwrapped.prototype?.constructor === unwrapped) {
+                unwrapped.prototype.constructor = proxied;
+              }
+              return proxied;
+            }
           if (patchedWindows.has(unwrappedWindow)) return;
           patchedWindows.add(unwrappedWindow);
           patchingCallback(unwrappedWindow, env);
