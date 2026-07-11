@@ -58,41 +58,52 @@ globalThis.patchWorkers = (() => {
     __getWorkerPatch__ ? joinPatches() : undefined
   );
 
-  return patch => {
 
-    if (patches.size === 0) {
-      Worlds.connect("patchWorkers", {
-        onMessage(msg, {port}) {
-          switch (msg.type) {
-            case "propagate":
-              // This is almost duplicated in patchWorker.main.js / modifyContext itself
-              propagator = `
-                const modifyContext = ${msg.modifyContext};
-                modifyContext(null, {});
-              `;
-              break;
-            case "getPatch":
-              return joinPatches();
-            case "patchUrl":
-            {
-              let {url, isServiceOrShared} = msg;
-              url = `${url}`;
-              const workerCreatedMsg = {
-                __patchWorkers__: { url, patch: joinPatches(), isServiceOrShared }
-              };
-              browser.runtime.sendMessage(workerCreatedMsg).then(r => {
-                port.postMessage({ type: "patchedUrl", url });
-              }, e => {
-                console.error(e, "Could not patch", url); // DEV_ONLY
-                // terminate / unregister workers which could not be patched
-                port.postMessage({type: "cancelUrl", url});
-              });
-            }
-          }
-        }
-      });
+  let initMain = port => {
+    initMain.port ??= port;
+    if (initMain.port && patches.size) {
+      initMain.port.postMessage({ type: "init" });
+      initMain = () => { }; // one-time
     }
+  };
 
+  Worlds.connect("patchWorkers", {
+    onConnect(port) {
+      initMain(port);
+    },
+    onMessage(msg, {port}) {
+      switch (msg.type) {
+        case "propagate":
+          // This is almost duplicated in patchWorker.main.js / modifyContext itself
+          propagator = `
+            const modifyContext = ${msg.modifyContext};
+            modifyContext(null, {});
+          `;
+          break;
+        case "getPatch":
+          return joinPatches();
+        case "patchUrl":
+        {
+          let {url, isServiceOrShared} = msg;
+          url = `${url}`;
+          const workerCreatedMsg = {
+            __patchWorkers__: { url, patch: joinPatches(), isServiceOrShared }
+          };
+          browser.runtime.sendMessage(workerCreatedMsg).then(r => {
+            port.postMessage({ type: "patchedUrl", url });
+          }, e => {
+            console.error(e, "Could not patch", url); // DEV_ONLY
+            // terminate / unregister workers which could not be patched
+            port.postMessage({type: "cancelUrl", url});
+          });
+        }
+      }
+    }
+  });
+
+
+  return patch => {
     patches.add(stringify(patch));
+    initMain();
   }
 })();

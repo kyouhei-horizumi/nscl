@@ -27,6 +27,8 @@ ns.on("capabilities", event => {
   if (!ns.canScript || ns.allows("wasm") ||
       !("WebAssembly" in globalThis)) {
     debug(`WasmHook bailing out, no need to block WebAssembly  on ${document.URL}.`); // DEV_ONLY
+    // connect anyway to correctly end worlds
+    Worlds.connect("WasmHook");
     return;
   }
 

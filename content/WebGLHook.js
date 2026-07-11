@@ -30,6 +30,8 @@ ns.on("capabilities", event => {
     if (!ns.canScript || ns.allows("webgl") ||
       !("HTMLCanvasElement" in window && createCanvas()?.getContext("webgl"))) {
       debug(`WebGLHook bailing out, no need to block webgl  on ${document.URL}.`); // DEV_ONLY
+      // connect anyway to correctly end worlds
+      Worlds.connect("WebGLHook");
       return;
     }
   } catch (e) {

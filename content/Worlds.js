@@ -302,12 +302,19 @@
   };
 
   const endWorldsIfDone = () => {
+    if (!("Worlds" in globalThis)) {
+      return;
+    }
     if (![...ports.values()].some(p => !(p?.connected))) {
       endWorlds();
+    } else if (document.readyState != "loading") {
+      console.debug(`Some ports not connected yet when readyState=${document.readyState}: Worlds may be leaking!`, // DEV_ONLY
+        [...ports.values()].filter(p => !(p?.connected))); // DEV_ONLY
     }
   };
 
   const Worlds = {
+    // don't pass any handler (!handlers) to auto-dispose the port on first connection
     connect(scriptId, handlers) {
       if (!handlers && typeof(scriptId) == "object") {
         // on Chromium we can try to infer the scriptId from the stack.
@@ -317,6 +324,11 @@
         scriptId = scriptMatch && scriptMatch[1];
       }
       if (scriptId) {
+        handlers ??= {
+          onConnect(port) {
+            queueMicrotask(() => port.dispose());
+          }
+        };
         return splitWorlds
           ? connectWorlds(scriptId, handlers)
           : Port.createMatching(scriptId, handlers)
@@ -416,7 +428,7 @@
 
     worldsPort.connect({
       onMessage(msg) {
-        console.debug(`${here} got message`, msg);
+        console.debug(`${here} got message`, msg); // DEV_ONLY
         switch(msg.id) {
           case "end":
             worldsPort.dispose(); // prevent infinite message loop

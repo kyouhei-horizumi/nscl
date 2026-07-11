@@ -491,12 +491,12 @@
   }
 
   Worlds.connect("patchWorkers.main", {
-    onConnect(port) {
-      proxyWorkers();
-      patchWindow(modifyContext, { port });
-    },
     onMessage(msg, {port}) {
       switch (msg.type) {
+        case "init":
+          proxyWorkers();
+          patchWindow(modifyContext, { port });
+        break;
         case "patchedUrl":
           failSafe.ok(msg.url);
         break;
