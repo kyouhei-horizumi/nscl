@@ -36,7 +36,7 @@
       };
 
       const createConstructorProxy = (original) => {
-        return original.prototype.costructor = new Proxy(original, {
+        return original.prototype.constructor = new Proxy(original, {
           construct(target, args) {
             if (/^(data|blob):/.test(args[0])) {
               return new original(...args);
