@@ -711,7 +711,15 @@ if (!["onSyncMessage", "sendSyncMessage"].some((m) => browser.runtime[m])) {
             unwrappedArgs[0] = safeCallback;
           }
           // Return an instance of the native MutationObserver from the page's window
-          return Reflect.construct(XPCNativeWrapper.unwrap(target), unwrappedArgs);
+          try {
+            return Reflect.construct(XPCNativeWrapper.unwrap(target), unwrappedArgs);
+          } catch (e) {
+            if (/dead object/.test(e.message)) {
+              // fall back to pristine mutation observer
+              return Reflect.construct(XPCNativeWrapper.unwrap(globalThis.MutationObserver), unwrappedArgs);
+            }
+            throw e;
+          }
         }
       }, window, { cloneFunctions: true, wrapReflectors: true }));
 
