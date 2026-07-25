@@ -97,7 +97,7 @@
         listeners.add(listener);
       },
       removeListener(listener) {
-        listeners.delete(listeners);
+        listeners.delete(listener);
       }
     }
   };
