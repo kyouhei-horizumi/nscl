@@ -175,24 +175,38 @@ var DocStartInjection = (() => {
        const ret = await browser.tabs.executeScript(tabId, args);
        return ret[0];
     };
+    // give up on uncancellable timed-out calls to avoid piling them up
+    const TIMED_OUT = Symbol("DocStartInjection execute timeout");
+    const EXECUTE_TIMEOUT = 3000;
+    const withDeadline = (promise, ms) => {
+      let timer;
+      const deadline = new Promise(resolve => { timer = setTimeout(() => resolve(TIMED_OUT), ms); });
+      return Promise.race([promise, deadline]).finally(() => clearTimeout(timer));
+    };
     const TIMEOUT = 3 * 60000 + Date.now();
     let checkingFrame;
     let isTargetedPage = false;
     for (; pending.has(id);) {
       attempts++;
       try {
+        // enforce timeout on every attempt
+        if (Date.now() > TIMEOUT) {
+          console.log("DocStartInjection timeout!");
+          break;
+        }
         if (attempts % 1000 === 0) {
           const tab = await browser.tabs.get(tabId);
           if (request.type == "main_frame" && tab.url != url) {
             console.error(`Tab mismatch: ${tab.url} <> ${url} (download-triggered?)`);
             break;
           }
-          if (Date.now() > TIMEOUT) {
-            console.log("DocStartInjection timeout!");
-            break;
-          }
         }
-        if (await execute()) {
+        const result = await withDeadline(execute(), EXECUTE_TIMEOUT);
+        if (result === TIMED_OUT) {
+          console.error(`DocStartInjection: executeScript() didn't settle within ${EXECUTE_TIMEOUT}ms at tab ${tabId}, frame ${frameId}, url ${url}. Giving up.`);
+          break;
+        }
+        if (result) {
           success = true;
           break;
         }
